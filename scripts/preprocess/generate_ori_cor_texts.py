@@ -4,7 +4,7 @@ if __name__ == "__main__":
     # Load the JSONL file
     # Here is a sample entry
     # {"page": "326", "title": "アーミッシュ", "pre_rev": "19336024", "post_rev": "27253461", "pre_text": "そのため自動車は運転しないが。", "post_text": "そのため自動車は運転しない。", "diffs": [{"pre_str": "が", "post_str": "", "pre_bart_likelihood": -21.22, "post_bart_likelihood": -10.74, "category": "insertion_a"}], "lstm_average_likelihood": -2.27}
-    input_path: str = "assets/jwtd_v2.0/test_normalized.jsonl"
+    input_path: str = "assets/jwtd_v2.0/gold_normalized.jsonl"
     output_orig_path: str = input_path.replace(".jsonl", "_orig.txt")
     output_corr_path: str = input_path.replace(".jsonl", "_corr.txt")
 

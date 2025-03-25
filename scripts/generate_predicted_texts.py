@@ -1,13 +1,6 @@
-original_text_path: str = "assets/jwtd_v2.0/test_normalized_orig.txt"
-predicted_text_path: str = "assets/jwtd_v2.0/test_normalized_predicted_elyza_jp_8b.txt"
-
-ollama_model_name: str = "hf.co/elyza/Llama-3-ELYZA-JP-8B-GGUF:Q4_K_M"
-ollama_server_url: str = "http://localhost:11434"
-
 import requests
-import json
 from pathlib import Path
-from typing import List
+import tqdm
 
 
 def get_ollama_prediction(text: str, model: str, url: str) -> str:
@@ -31,11 +24,14 @@ def process_file(input_path: str, output_path: str, model: str, url: str) -> Non
     # Create output directory if it doesn't exist
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # Count total lines for progress bar
+    total_lines = sum(1 for _ in open(input_path, "r", encoding="utf-8"))
+
     with (
         open(input_path, "r", encoding="utf-8") as in_file,
         open(output_path, "w", encoding="utf-8") as out_file,
     ):
-        for line in in_file:
+        for line in tqdm.tqdm(in_file, total=total_lines, desc="Processing lines"):
             text = line.strip()
             if text:  # Skip empty lines
                 prediction = get_ollama_prediction(text, model, url)
@@ -44,14 +40,18 @@ def process_file(input_path: str, output_path: str, model: str, url: str) -> Non
                 out_file.write("\n")
 
 
-def main():
+if __name__ == "__main__":
+    original_text_path: str = "assets/jwtd_v2.0/gold_normalized_orig.txt"
+    predicted_text_path: str = (
+        "assets/jwtd_v2.0/gold_normalized_predicted_elyza_jp_8b.txt"
+    )
+
+    ollama_model_name: str = "hf.co/elyza/Llama-3-ELYZA-JP-8B-GGUF:Q4_K_M"
+    ollama_server_url: str = "http://localhost:11434"
+
     process_file(
         input_path=original_text_path,
         output_path=predicted_text_path,
         model=ollama_model_name,
         url=ollama_server_url,
     )
-
-
-if __name__ == "__main__":
-    main()

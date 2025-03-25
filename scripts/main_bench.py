@@ -2,27 +2,9 @@ import errant
 from errant import Annotator
 import spacy
 import ollama
-from ollama import AsyncClient
 import json
 import asyncio
 from collections import defaultdict
-
-
-async def get_model_correction(
-    client: ollama.AsyncClient, text: str, ollama_model_name: str
-) -> str:
-    """Get correction from the LLM model."""
-    response = await client.chat(
-        model=ollama_model_name,
-        messages=[
-            {
-                "role": "system",
-                "content": "Correct any grammatical or typing errors in the following Japanese text. Only output the corrected text.",
-            },
-            {"role": "user", "content": text},
-        ],
-    )
-    return response["message"]["content"].strip()
 
 
 def calculate_metrics(tp: int, fp: int, fn: int) -> tuple[float, float, float]:
@@ -38,37 +20,32 @@ def calculate_metrics(tp: int, fp: int, fn: int) -> tuple[float, float, float]:
 
 
 async def evaluate_corrections(
-    ollama_model_name: str,
-    ollama_server_url: str,
-    test_text_jsonl_path: str,
+    orig_text_path: str,
+    corr_text_path: str,
+    pred_text_path: str,
     spacy_model_name: str,
     stats_save_path: str,
 ) -> dict[str, float]:
-    # Initialize Ollama client
-    client = ollama.AsyncClient(host=ollama_server_url)
 
-    # Load test data
-    with open(test_text_jsonl_path, "r", encoding="utf-8") as f:
-        test_data = [json.loads(line) for line in f]
+    # Load text files
+    with open(orig_text_path, "r", encoding="utf-8") as f:
+        orig_texts = f.readlines()
+    with open(corr_text_path, "r", encoding="utf-8") as f:
+        corr_texts = f.readlines()
+    with open(pred_text_path, "r", encoding="utf-8") as f:
+        pred_texts = f.readlines()
 
     results = defaultdict(int)
 
     nlp = spacy.load(spacy_model_name)
-    annotator: Annotator = errant.load("ja", nlp)
+    annotator: Annotator = errant.load("en", nlp)
 
-    for entry in test_data:
-        source_text = entry["pre_text"]
-        gold_text = entry["post_text"]
-
-        # Get model prediction
-        predicted_text = await get_model_correction(
-            client, source_text, ollama_model_name
-        )
+    for orig_text, corr_text, pred_text in zip(orig_texts, corr_texts, pred_texts):
 
         # Create ERRANT annotations
-        source = annotator.parse(source_text)
-        gold = annotator.parse(gold_text)
-        predicted = annotator.parse(predicted_text)
+        source = annotator.parse(orig_text, tokenise=True)
+        gold = annotator.parse(corr_text, tokenise=True)
+        predicted = annotator.parse(pred_text, tokenise=True)
 
         # Get edits
         gold_edits = annotator.annotate(source, gold)
@@ -110,22 +87,20 @@ if __name__ == "__main__":
     # Load the test set
     # Here is a sample entry
     # {"page": "326", "title": "アーミッシュ", "pre_rev": "19336024", "post_rev": "27253461", "pre_text": "そのため自動車は運転しないが。", "post_text": "そのため自動車は運転しない。", "diffs": [{"pre_str": "が", "post_str": "", "pre_bart_likelihood": -21.22, "post_bart_likelihood": -10.74, "category": "insertion_a"}], "lstm_average_likelihood": -2.27}
-    test_text_jsonl_path: str = "assets/jwtd_v2.0/test_normalized.jsonl"
+    orig_text_path: str = "assets/jwtd_v2.0/gold_normalized_orig.txt"
+    corr_text_path: str = "assets/jwtd_v2.0/gold_normalized_corr.txt"
+    pred_text_path: str = "assets/jwtd_v2.0/gold_normalized_predicted_elyza_jp_8b.txt"
     stats_save_path: str = "out/eval/elyze_jp_8b_stats.json"
 
-    # Define the models
-    ollama_model_name: str = "hf.co/elyza/Llama-3-ELYZA-JP-8B-GGUF:Q4_K_M"
-    ollama_server_url: str = "http://localhost:11434"
     spacy_model_name: str = "ja_core_news_md"
 
     # Pull the model from Ollama
-    ollama.pull(ollama_model_name)
 
     stats = asyncio.run(
         evaluate_corrections(
-            ollama_model_name,
-            ollama_server_url,
-            test_text_jsonl_path,
+            orig_text_path,
+            corr_text_path,
+            pred_text_path,
             spacy_model_name,
             stats_save_path,
         )
