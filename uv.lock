@@ -1030,12 +1030,14 @@ source = { virtual = "." }
 dependencies = [
     { name = "errant" },
     { name = "ollama" },
+    { name = "spacy" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "errant", specifier = ">=3.0.0" },
     { name = "ollama", specifier = ">=0.4.7" },
+    { name = "spacy", specifier = ">=3.8.4" },
 ]
 
 [[package]]
