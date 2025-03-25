@@ -7,5 +7,6 @@ requires-python = ">=3.10"
 dependencies = [
     "errant>=3.0.0",
     "ollama>=0.4.7",
-    "spacy>=3.8.4",
+    "pip>=25.0.1",
+    "spacy[cuda12x,ja]>=3.8.4",
 ]
