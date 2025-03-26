@@ -2,7 +2,7 @@
 Benchmarking for LLM typo checking
 
 ## Usage
-1. Download the dataset.
+1. Download the dataset under `/assets`.
 2. Run `scripts/preprocess/unicode_normalize.py` to normalize the dataset.
 3. Run `scripts/preprocess/generate_ori_cor_texts.py` to generate original and corrected texts.
 4. Run `scripts/preprocess/tokenize_texts.py` to tokenize the texts.
